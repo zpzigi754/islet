@@ -9,14 +9,18 @@ use crate::gic;
 use crate::gic::{GIC_FEATURES, ICH_HCR_EL2_EOI_COUNT_MASK, ICH_HCR_EL2_NS_MASK};
 use crate::helper;
 use crate::helper::bits_in_reg;
+use crate::helper::{FAR_EL2, HPFAR_EL2, SPSR_EL2};
 use crate::helper::VTTBR_EL2;
-use crate::helper::{EsrEl2, ESR_EL2_EC_DATA_ABORT};
+use crate::helper::{EsrEl2, ESR_EL2_EC_WFX, ESR_EL2_EC_DATA_ABORT, ESR_EL2_EC_INST_ABORT, ESR_EMULATED_ABORT_MASK, ESR_NONEMULATED_ABORT_MASK};
+use crate::helper::{ESR_EL2_ABORT_FSC_SEA, ESR_EL2_ABORT_FSC_SEA_TTW_START, ESR_EL2_ABORT_FSC_SEA_TTW_END};
+use crate::helper::{ESR_EL2_ABORT_SET_UER, ESR_EL2_ABORT_SET_UC, ESR_EL2_ABORT_SET_UEO};
 use crate::realm;
 use crate::realm::context::Context;
 use crate::realm::mm::page_table::pte;
 use crate::realm::mm::stage2_translation::Stage2Translation;
 use crate::realm::mm::translation_granule_4k::RawPTE;
 use crate::realm::timer;
+use crate::config::GRANULE_MASK;
 use monitor::rmi::error::Error;
 use monitor::rmi::error::InternalError::*;
 
@@ -415,4 +419,133 @@ impl monitor::rmi::Interface for RMI {
         }
         Ok(())
     }
+
+    fn handle_sync(&self, id: usize, vcpu: usize, run: &mut Run) -> Result<(), Error> {
+        let realm = get_realm(id).ok_or(Error::RmiErrorOthers(NotExistRealm))?;
+        let mut locked_realm = realm.lock();
+        let vcpu = locked_realm
+            .vcpus
+            .get_mut(vcpu)
+            .ok_or(Error::RmiErrorOthers(NotExistVCPU))?;
+        let context = &mut vcpu.lock().context;
+
+        let mut esr_el2 = context.sys_regs.esr_el2;
+        let esr = EsrEl2::new(esr_el2);
+
+        let ec = esr.get_masked_value(EsrEl2::EC);
+        match ec {
+            ESR_EL2_EC_WFX => {
+                unimplemented!(); //TODO
+            },
+            ESR_EL2_EC_INST_ABORT => {
+                debug!("[CCH DEBUG] Synchronous: InstructionAbort");
+            },
+            ESR_EL2_EC_DATA_ABORT => {
+                let mut far = 0;
+                let mut write_val = 0;
+                let fipa = unsafe {HPFAR_EL2.get_masked(HPFAR_EL2::FIPA)} << 8;
+
+                // handle sync external abort
+                if handle_sync_external_abort(esr) {
+                    debug!("[CCH DEBUG] external abort has been handled");
+                    return Ok(()); //TODO: handle differently
+                }
+
+                if ipa_is_empty(fipa) {
+                    debug!("[CCH DEBUG] ipa_is_empty");
+                    return Ok(()); //TODO: handle differently
+                }
+
+                if fixup_aarch32_data_abort(context, &mut esr_el2) {
+                    debug!("[CCH DEBUG] fixup aarch32 data abort");
+                    esr_el2 &= ESR_NONEMULATED_ABORT_MASK;
+                } else {
+                    far = unsafe { FAR_EL2.get() } & !GRANULE_MASK as u64;
+                    esr_el2 &= ESR_EMULATED_ABORT_MASK;
+                }
+
+                // esr is write
+                if esr.get_masked_value(EsrEl2::WNR) != 0 {
+                    let rt = esr.get_masked_value(EsrEl2::SRT) as usize;
+                    if rt != 31 {
+                        let sas = esr.get_masked_value(EsrEl2::SAS);
+                        let mask: u64 = match sas {
+                            0 => 0xff,                // byte
+                            1 => 0xffff,              // half-word
+                            2 => 0xffffffff,          // word
+                            3 => 0xffffffff_ffffffff, // double word
+                            _ => unreachable!(),      // SAS consists of two bits
+                        };
+                        write_val = context.gp_regs[rt] & mask;
+                    }
+                }
+
+                let hpfar = context.sys_regs.hpfar;
+                unsafe { run.set_esr(esr_el2) };
+                unsafe { run.set_far(far) };
+                unsafe { run.set_hpfar(hpfar) };
+                unsafe { run.set_gpr0(write_val) };
+                debug!("Synchronous: DataAbort");
+            },
+            _ => {
+                debug!("[CCH DEBUG] Synchronous: Other (unexpected)");
+            },
+        }
+        Ok(())
+    }
+}
+
+fn fixup_aarch32_data_abort(context: &mut Context, esr: &mut u64) -> bool {
+    let spsr = context.spsr;
+
+    // aarch32
+    if (spsr & SPSR_EL2::nRW) != 0 {
+        *esr &= !EsrEl2::ISV;
+        return true;
+    }
+    return false;
+}
+
+fn ipa_is_empty(_ipa:u64) -> bool {
+    //TODO
+    return false;
+}
+
+fn fsc_is_external_abort(fsc: u64) -> bool {
+    if fsc == ESR_EL2_ABORT_FSC_SEA {
+        return true;
+    }
+
+    if fsc >= ESR_EL2_ABORT_FSC_SEA_TTW_START &&
+       fsc <= ESR_EL2_ABORT_FSC_SEA_TTW_END {
+        return true;
+    }
+
+    return false;
+}
+
+fn handle_sync_external_abort(esr: EsrEl2) -> bool {
+    let fsc = esr.get_masked_value(EsrEl2::DFSC);
+    let set = esr.get_masked_value(EsrEl2::SET);
+
+    if !fsc_is_external_abort(fsc) {
+        return false;
+    }
+
+    match set {
+        ESR_EL2_ABORT_SET_UER => {
+            debug!("[CCH DEBUG] set user");
+        }
+        ESR_EL2_ABORT_SET_UEO => {
+            debug!("[CCH DEBUG] set ueo");
+        }
+        ESR_EL2_ABORT_SET_UC => {
+            debug!("[CCH DEBUG] set uc");
+        }
+        _ => {
+            debug!("[CCH DEBUG] set others");
+        }
+    }
+
+    return true;
 }

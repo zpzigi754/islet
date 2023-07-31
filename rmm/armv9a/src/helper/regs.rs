@@ -42,13 +42,50 @@ define_bits!(
     SF[15 - 15],
     // Acquire/Release. (ISV == '1')
     AR[14 - 14],
+    // SET (Synchronous Error Type).
+    SET[12 - 11],
+    // FAR not Valid.
+    FNV[10 - 10],
+    // External abort type.
+    EA[9 - 9],
     S1PTW[7 - 7],
     // Write not Read.
     WNR[6 - 6],
     DFSC[5 - 0]
 );
 
+pub const ESR_EL2_EC_UNKNOWN: u64 = 0;
+pub const ESR_EL2_EC_WFX: u64 = 1;
+pub const ESR_EL2_EC_FPU: u64 = 7;
+pub const ESR_EL2_EC_SVC: u64 = 21;
+pub const ESR_EL2_EC_HVC: u64 = 22;
+pub const ESR_EL2_EC_SMC: u64 = 23;
+pub const ESR_EL2_EC_SYSREG: u64 = 24;
+pub const ESR_EL2_EC_SVE: u64 = 25;
+pub const ESR_EL2_EC_INST_ABORT: u64 = 32;
 pub const ESR_EL2_EC_DATA_ABORT: u64 = 36;
+pub const ESR_EL2_EC_SERROR: u64 = 47;
+
+pub const ESR_EL2_ABORT_FSC_SEA: u64 = 0x10;
+pub const ESR_EL2_ABORT_FSC_SEA_TTW_START: u64 = 0x13;
+pub const ESR_EL2_ABORT_FSC_SEA_TTW_END: u64 = 0x17;
+
+pub const ESR_EL2_ABORT_SET_UER: u64 = 0x0;
+pub const ESR_EL2_ABORT_SET_UC: u64 = 0x2;
+pub const ESR_EL2_ABORT_SET_UEO: u64 = 0x3;
+
+
+pub const ESR_NONEMULATED_ABORT_MASK: u64 = EsrEl2::EC |
+                                            EsrEl2::SET |
+                                            EsrEl2::FNV |
+                                            EsrEl2::EA |
+                                            EsrEl2::DFSC;
+
+pub const ESR_EMULATED_ABORT_MASK: u64 = ESR_NONEMULATED_ABORT_MASK | 
+                                         EsrEl2::ISV |
+                                         EsrEl2::SAS |
+                                         EsrEl2::SF |
+                                         EsrEl2::WNR;
 
 define_register!(SP);
 define_sys_register!(SP_EL0);
@@ -61,6 +98,7 @@ define_sys_register!(
     A[8 - 8], // SError exception mask
     I[7 - 7], // IRQ exception mask
     F[6 - 6], // FIQ exception mask
+    nRW[4 - 4], // Execution state (0: aarch64, 1: aarch32)
     M[3 - 0]  // Exception level and selected SP
 );
 

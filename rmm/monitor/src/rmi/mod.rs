@@ -113,6 +113,7 @@ pub trait Interface {
     fn send_timer_state_to_host(&self, id: usize, vcpu: usize, run: &mut Run) -> Result<(), Error>;
     fn send_mmio_write(&self, id: usize, vcpu: usize, run: &mut Run) -> Result<(), Error>;
     fn emulate_mmio(&self, id: usize, vcpu: usize, run: &Run) -> Result<(), Error>;
+    fn handle_sync(&self, id: usize, vcpu: usize, run: &mut Run) -> Result<(), Error>;
 }
 
 pub(crate) fn dummy() {
