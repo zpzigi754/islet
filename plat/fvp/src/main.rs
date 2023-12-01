@@ -5,6 +5,10 @@
 #![warn(rust_2018_idioms)]
 #![deny(warnings)]
 
+cfg_if::cfg_if! {
+    if #[cfg(feature = "verifier-klee")] {
+        mod klee;
+    } else {
 #[macro_use]
 extern crate log;
 
@@ -24,4 +28,6 @@ pub unsafe fn main() -> ! {
     islet_rmm::start(cpu::get_cpu_id());
 
     panic!("failed to run the mainloop");
+}
+}
 }
