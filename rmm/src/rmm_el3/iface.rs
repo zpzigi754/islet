@@ -63,7 +63,9 @@ pub(super) fn get_plat_token() {
     let guard: SpinlockGuard<'_, _> = RMM_SHARED_BUFFER_LOCK.lock();
 
     let dak_priv = utils::get_vector(&REALM_ATTEST_KEY);
+    #[cfg(not(feature = "verifier-klee"))] //TODO: remove this after supporting sha and digest
     let dak_pub_hash = digest::get_realm_public_key_hash(dak_priv);
+    #[cfg(not(feature = "verifier-klee"))] 
     utils::vec_to_va(&dak_pub_hash, *guard, config::PAGE_SIZE);
 
     let ret = smc(

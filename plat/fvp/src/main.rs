@@ -3,7 +3,7 @@
 #![feature(asm_const)]
 #![feature(naked_functions)]
 #![warn(rust_2018_idioms)]
-#![deny(warnings)]
+//#![deny(warnings)]
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "verifier-klee")] {

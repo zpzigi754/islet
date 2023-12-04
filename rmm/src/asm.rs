@@ -22,7 +22,7 @@ pub fn smc(cmd: usize, args: &[usize]) -> [usize; 8] {
     put(&mut padded_args);
 
     // TODO: support more number of registers than 8 if needed
-    #[cfg(not(kani))]
+    #[cfg(not(any(kani, feature = "verifier-klee")))]
     unsafe {
         asm!(
             "smc #0x0",
@@ -35,6 +35,18 @@ pub fn smc(cmd: usize, args: &[usize]) -> [usize; 8] {
             inlateout("x6") padded_args[6] => ret[6],
             inlateout("x7") padded_args[7] => ret[7],
         )
+    }
+    #[cfg(feature = "verifier-klee")]
+    {
+        use verification_annotations::traits::AbstractValue;
+        use crate::rmi; // TODO: remove this later
+        ret[0] = rmi::FEATURES; //FIXME
+        //ret[0] = rmi::RTT_CREATE; //FIXME
+        //ret[0] = rmi::GRANULE_DELEGATE; //FIXME
+        ret[1] = usize::abstract_value();
+        ret[2] = usize::abstract_value();
+        ret[3] = usize::abstract_value();
+        ret[4] = usize::abstract_value();
     }
 
     ret

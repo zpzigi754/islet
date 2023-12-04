@@ -54,6 +54,7 @@ fn is_valid_rtt_cmd(ipa: usize, level: usize) -> bool {
 }
 
 pub fn set_event_handler(mainloop: &mut Mainloop) {
+    #[cfg(not(feature = "verifier-klee"))]
     listen!(mainloop, rmi::RTT_CREATE, |arg, _ret, _rmm| {
         let rtt_addr = arg[0];
         let rd_granule = get_granule_if!(arg[1], GranuleState::RD)?;
@@ -67,10 +68,12 @@ pub fn set_event_handler(mainloop: &mut Mainloop) {
         if rtt_addr == arg[1] {
             return Err(Error::RmiErrorInput);
         }
+        #[cfg(not(feature = "verifier-klee"))]
         crate::rtt::create(rd.id(), rtt_addr, ipa, level)?;
         Ok(())
     });
 
+    #[cfg(not(feature = "verifier-klee"))]
     listen!(mainloop, rmi::RTT_DESTROY, |arg, _ret, _rmm| {
         let rtt_addr = arg[0];
         let rd_granule = get_granule_if!(arg[1], GranuleState::RD)?;
@@ -85,6 +88,7 @@ pub fn set_event_handler(mainloop: &mut Mainloop) {
         Ok(())
     });
 
+    #[cfg(not(feature = "verifier-klee"))]
     listen!(mainloop, rmi::RTT_INIT_RIPAS, |arg, _ret, _rmm| {
         let rd_granule = get_granule_if!(arg[0], GranuleState::RD)?;
         let rd = rd_granule.content::<Rd>();
@@ -99,11 +103,13 @@ pub fn set_event_handler(mainloop: &mut Mainloop) {
         }
         crate::rtt::init_ripas(rd.id(), ipa, level)?;
 
+        #[cfg(not(feature = "verifier-klee"))]
         HashContext::new(rd)?.measure_ripas_granule(ipa, level as u8)?;
 
         Ok(())
     });
 
+    #[cfg(not(feature = "verifier-klee"))]
     listen!(mainloop, rmi::RTT_SET_RIPAS, |arg, _ret, _rmm| {
         let ipa = arg[2];
         let level = arg[3];
@@ -148,6 +154,7 @@ pub fn set_event_handler(mainloop: &mut Mainloop) {
         Ok(())
     });
 
+    #[cfg(not(feature = "verifier-klee"))]
     listen!(mainloop, rmi::RTT_READ_ENTRY, |arg, ret, _rmm| {
         let rd_granule = get_granule_if!(arg[0], GranuleState::RD)?;
         let rd = rd_granule.content::<Rd>();
@@ -163,6 +170,7 @@ pub fn set_event_handler(mainloop: &mut Mainloop) {
         Ok(())
     });
 
+    #[cfg(not(feature = "verifier-klee"))]
     listen!(mainloop, rmi::DATA_CREATE, |arg, _ret, rmm| {
         // target_pa: location where realm data is created.
         let target_pa = arg[0];
@@ -200,6 +208,7 @@ pub fn set_event_handler(mainloop: &mut Mainloop) {
         // read src page
         let src_page = copy_from_host_or_ret!(DataPage, src_pa);
 
+        #[cfg(not(feature = "verifier-klee"))]
         HashContext::new(rd)?.measure_data_granule(&src_page, ipa, flags)?;
 
         // 3. copy src to _data
@@ -212,6 +221,7 @@ pub fn set_event_handler(mainloop: &mut Mainloop) {
         Ok(())
     });
 
+    #[cfg(not(feature = "verifier-klee"))]
     listen!(mainloop, rmi::DATA_CREATE_UNKNOWN, |arg, _ret, rmm| {
         // target_phys: location where realm data is created.
         let target_pa = arg[0];
@@ -241,6 +251,7 @@ pub fn set_event_handler(mainloop: &mut Mainloop) {
         Ok(())
     });
 
+    #[cfg(not(feature = "verifier-klee"))]
     listen!(mainloop, rmi::DATA_DESTROY, |arg, _ret, _rmm| {
         // rd granule lock
         let rd_granule = get_granule_if!(arg[0], GranuleState::RD)?;
@@ -261,6 +272,7 @@ pub fn set_event_handler(mainloop: &mut Mainloop) {
         Ok(())
     });
 
+    #[cfg(not(feature = "verifier-klee"))]
     // Map an unprotected IPA to a non-secure PA.
     listen!(mainloop, rmi::RTT_MAP_UNPROTECTED, |arg, _ret, _rmm| {
         let ipa = arg[1];
@@ -282,6 +294,7 @@ pub fn set_event_handler(mainloop: &mut Mainloop) {
         Ok(())
     });
 
+    #[cfg(not(feature = "verifier-klee"))]
     // Unmap a non-secure PA at an unprotected IPA
     listen!(mainloop, rmi::RTT_UNMAP_UNPROTECTED, |arg, _ret, _rmm| {
         let ipa = arg[1];

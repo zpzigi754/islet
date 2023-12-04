@@ -259,7 +259,9 @@ impl page_table::Entry for Entry {
     {
         let mut inner = self.0.lock();
         if !inner.valid() {
-            inner.set_state_for_table(index)
+            return inner.set_state_for_table(index);
+            #[cfg(feature = "verifier-klee")]
+            assert!(false); // FIXME: CCH just test (this would be reachable)
         } else {
             Ok(())
         }

@@ -46,6 +46,7 @@ pub struct Info {
 /// The `tf` has the TrapFrame of current context.
 #[no_mangle]
 #[allow(unused_variables)]
+#[cfg(not(feature = "verifier-klee"))] // FIXME: extern "C" causes abort in klee
 pub extern "C" fn handle_exception(info: Info, esr: u32, tf: &mut TrapFrame) {
     match info.kind {
         Kind::Synchronous => match Syndrome::from(esr) {
@@ -139,6 +140,7 @@ pub const RET_TO_RMM: u64 = 1;
 /// Do not write sys_regs of VCPU here. (ref. HANDLE_LOWER in vectors.s)
 #[no_mangle]
 #[allow(unused_variables)]
+#[cfg(not(feature = "verifier-klee"))] // FIXME: extern "C" causes abort in klee
 pub extern "C" fn handle_lower_exception(
     info: Info,
     esr: u32,
