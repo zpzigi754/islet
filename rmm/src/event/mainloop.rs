@@ -26,6 +26,7 @@ impl Mainloop {
         }
     }
 
+    #[cfg(not(feature = "verifier-klee"))]
     fn add_event_handlers(&mut self) {
         rmi::features::set_event_handler(self);
         rmi::gpt::set_event_handler(self);
@@ -33,6 +34,13 @@ impl Mainloop {
         rmi::rec::set_event_handler(self);
         rmi::rtt::set_event_handler(self);
         rmi::version::set_event_handler(self);
+    }
+
+    #[cfg(feature = "verifier-klee")]
+    fn add_event_handlers(&mut self) {
+        rmi::features::set_event_handler(self);
+        //rmi::rtt::set_event_handler(self);
+        //rmi::gpt::set_event_handler(self);
     }
 
     pub fn boot_complete(&mut self) {
@@ -62,6 +70,7 @@ impl Mainloop {
         );
     }
 
+    #[cfg(not(feature = "verifier-klee"))]
     pub fn run(&self, monitor: &Monitor) {
         loop {
             let mut ctx = self.queue.lock().pop_front().unwrap(); // TODO: remove unwrap here, by introducing a more realistic queue
@@ -82,6 +91,24 @@ impl Mainloop {
             ctx.cmd = rmi::REQ_COMPLETE;
             self.dispatch(ctx);
         }
+    }
+    
+    #[cfg(feature = "verifier-klee")]
+    // XXX: this has no loop to reduce the path
+    pub fn run(&self, monitor: &Monitor) {
+        let mut ctx = self.queue.lock().pop_front().unwrap(); // TODO: remove unwrap here, by introducing a more realistic queue
+            
+        if self.on_event.is_empty() {
+            panic!("There is no registered event handler.");
+        }
+        match self.on_event.get(&ctx.cmd) {
+            Some(handler) => {
+                ctx.do_rmi(|arg, ret| handler(arg, ret, monitor));
+            }
+            None => {
+                error!("Not registered event: {:X}", ctx.cmd);
+            }
+        };
     }
 
     pub fn add_event_handler(&mut self, code: usize, handler: Handler) {

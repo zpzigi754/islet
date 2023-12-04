@@ -29,7 +29,7 @@ fn calculate_hash(data: Vec<u8>, algo: HashAlgo) -> Vec<u8> {
         }
     }
 }
-
+#[cfg(not(feature = "verifier-klee"))]
 pub(super) fn get_realm_public_key_hash(key: Vec<u8>) -> Vec<u8> {
     let priv_dak = p384::SecretKey::from_slice(&key).unwrap();
 

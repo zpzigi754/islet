@@ -245,6 +245,7 @@ pub fn set_event_handler(rsi: &mut RsiHandle) {
 
         let rd = get_granule_if!(rec.owner()?, GranuleState::RD)?;
         let rd = rd.content::<Rd>();
+        #[cfg(not(feature = "verifier-klee"))]
         HashContext::new(rd)?.extend_measurement(&buffer[0..size], index)?;
 
         set_reg(realmid, vcpuid, 0, SUCCESS)?;

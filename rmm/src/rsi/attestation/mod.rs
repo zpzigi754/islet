@@ -3,6 +3,7 @@ pub mod claims;
 use alloc::{boxed::Box, string::String, vec, vec::Vec};
 use ciborium::{ser, Value};
 use coset::{CoseSign1Builder, HeaderBuilder, TaggedCborSerializable};
+#[cfg(not(feature = "verifier-klee"))]
 use ecdsa::signature::Signer;
 use tinyvec::ArrayVec;
 
@@ -57,7 +58,10 @@ impl Attestation {
     ) -> Vec<u8> {
         let mut cca_token = Vec::new();
 
+        #[cfg(not(feature = "verifier-klee"))]
         let realm_token = self.create_realm_token(challenge, measurements, hash_algo);
+        #[cfg(feature = "verifier-klee")] // TODO: remove the below after supporting create_realm_token
+        let realm_token = Vec::new();
 
         let realm_token_entry = (
             Value::Integer(CCA_REALM_DELEGATED_TOKEN.into()),
@@ -80,6 +84,7 @@ impl Attestation {
         cca_token
     }
 
+    #[cfg(not(feature = "verifier-klee"))]
     fn create_realm_token(
         &self,
         challenge: &[u8],
@@ -136,6 +141,7 @@ impl Attestation {
             .expect("Failed to create tagged signed token")
     }
 
+    #[cfg(not(feature = "verifier-klee"))]
     fn sign(secret_key: p384::SecretKey, data: &[u8]) -> Vec<u8> {
         let signing_key = p384::ecdsa::SigningKey::from_bytes(&secret_key.to_bytes())
             .expect("Failed to generate signing key");

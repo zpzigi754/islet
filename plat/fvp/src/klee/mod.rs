@@ -1,9 +1,14 @@
 use core::panic::PanicInfo;
 use verification_annotations::prelude::*;
+use islet_rmm::monitor::Monitor;
 
 #[cfg(feature = "verifier-klee")]
 #[no_mangle]
 pub fn main() {
+    unsafe { islet_rmm::allocator::init(); }
+
+    Monitor::new().run();
+
     let a = u32::abstract_value();
     let b = u32::abstract_value();
     verifier::assume(1 <= a && a <= 1000);
@@ -14,5 +19,6 @@ pub fn main() {
 
 #[panic_handler]
 fn panic(_panic: &PanicInfo<'_>) -> ! {
+    verifier::assert!(false);
     loop {}
 }

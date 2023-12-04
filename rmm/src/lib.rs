@@ -5,7 +5,7 @@
 #![feature(const_mut_refs)]
 #![feature(specialization)]
 #![warn(rust_2018_idioms)]
-#![deny(warnings)]
+//#![deny(warnings)]
 
 #[cfg(not(test))]
 pub mod allocator;
@@ -24,7 +24,7 @@ pub mod io;
 pub mod logger;
 pub mod mm;
 pub mod mmio;
-#[cfg(not(any(test, kani)))]
+#[cfg(not(any(test, kani, feature = "verifier-klee")))]
 pub mod panic;
 pub mod realm;
 pub mod rmi;
@@ -35,6 +35,9 @@ pub mod stat;
 #[macro_use]
 pub mod r#macro;
 mod measurement;
+#[cfg(feature = "verifier-klee")]
+pub mod monitor;
+#[cfg(not(feature = "verifier-klee"))]
 mod monitor;
 mod rmm_el3;
 
@@ -49,6 +52,7 @@ extern crate log;
 use crate::exception::vectors;
 #[cfg(feature = "gst_page_table")]
 use crate::granule::create_granule_status_table as setup_gst;
+#[cfg(not(feature = "verifier-klee"))] //TODO: remove this after replacing lazy_static
 use crate::mm::translation::get_page_table;
 use crate::monitor::Monitor;
 use crate::rmm_el3::setup_el3_ifc;
@@ -89,6 +93,7 @@ unsafe fn setup_el2() {
             | HCR_EL2::FMO
             | HCR_EL2::VM,
     );
+    #[cfg(not(feature = "verifier-klee"))] // TODO: remove this after supporting vectors
     VBAR_EL2.set(addr_of!(vectors) as u64);
     SCTLR_EL2.set(SCTLR_EL2::C | SCTLR_EL2::I | SCTLR_EL2::M | SCTLR_EL2::EOS);
     CPTR_EL2.set(CPTR_EL2::TAM);
@@ -121,12 +126,14 @@ unsafe fn setup_mmu_cfg() {
 
     // set the ttlb base address, this is where the memory address translation
     // table walk starts
+    #[cfg(not(feature = "verifier-klee"))] // TODO: remove this after replacing lazy_static
     let ttlb_base = get_page_table();
 
     // Invalidate the local I-cache so that any instructions fetched
     // speculatively are discarded.
     MAIR_EL2.set(mair_el2);
     TCR_EL2.set(tcr_el2);
+    #[cfg(not(feature = "verifier-klee"))] // TODO: remove this after replacing lazy_static
     TTBR0_EL2.set(ttlb_base);
     core::arch::asm!("dsb ish", "isb",);
 }

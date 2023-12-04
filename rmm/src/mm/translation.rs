@@ -44,7 +44,7 @@ impl PageTable {
 lazy_static! {
     static ref RMM_PAGE_TABLE: Mutex<Inner<'static>> = Mutex::new(Inner::new());
 }
-
+#[cfg(not(feature = "verifier-klee"))]
 pub fn get_page_table() -> u64 {
     let mut page_table = RMM_PAGE_TABLE.lock();
     page_table.fill();

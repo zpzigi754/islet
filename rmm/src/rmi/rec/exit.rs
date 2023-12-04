@@ -12,6 +12,7 @@ use crate::Monitor;
 use crate::{rmi, rsi};
 use armv9a::{EsrEl2, EMULATABLE_ABORT_MASK, HPFAR_EL2, NON_EMULATABLE_ABORT_MASK};
 
+#[cfg(not(feature = "verifier-klee"))]
 pub fn handle_realm_exit(
     realm_exit_res: [usize; 4],
     rmm: &Monitor,
@@ -66,6 +67,18 @@ pub fn handle_realm_exit(
     Ok((return_to_ns, ret))
 }
 
+#[cfg(feature = "verifier-klee")]
+pub fn handle_realm_exit(
+    realm_exit_res: [usize; 4],
+    rmm: &Monitor,
+    rec: &mut Rec,
+    run: &mut Run,
+) -> Result<(bool, usize), Error> {
+    let return_to_ns = true;
+    let ret = rmi::SUCCESS;
+    Ok((return_to_ns, ret))
+}
+#[cfg(not(feature = "verifier-klee"))]
 fn is_non_emulatable_data_abort(
     realm_id: usize,
     ipa_bits: usize,
@@ -109,7 +122,7 @@ fn handle_data_abort(
     run.set_hpfar(hpfar_el2);
 
     let fault_ipa = ((HPFAR_EL2::FIPA & hpfar_el2) << 8) as usize;
-
+    #[cfg(not(feature = "verifier-klee"))]
     let (exit_esr, exit_far) =
         match is_non_emulatable_data_abort(realm_id, ipa_bits, fault_ipa, esr_el2)? {
             true => (esr_el2 & NON_EMULATABLE_ABORT_MASK, 0),
@@ -125,8 +138,11 @@ fn handle_data_abort(
             }
         };
 
-    run.set_esr(exit_esr);
-    run.set_far(exit_far);
+    #[cfg(not(feature = "verifier-klee"))]
+    {
+        run.set_esr(exit_esr);
+        run.set_far(exit_far);
+    }
 
     Ok(rmi::SUCCESS)
 }
