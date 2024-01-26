@@ -1,6 +1,6 @@
+use crate::config::GRANULE_MASK;
 use crate::event::realmexit::*;
 use crate::event::{Context, RsiHandle};
-use crate::granule::GRANULE_MASK;
 use crate::realm::context::get_reg;
 use crate::realm::mm::stage2_tte::S2TTE;
 use crate::rmi::error::Error;

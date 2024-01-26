@@ -1,6 +1,7 @@
 use super::mpidr;
+use crate::config::GRANULE_SIZE;
 use crate::const_assert_eq;
-use crate::granule::{GranuleState, GRANULE_SIZE};
+use crate::granule::GranuleState;
 use crate::host::Accessor as HostAccessor;
 use crate::measurement::Hashable;
 use crate::rmi::error::Error;

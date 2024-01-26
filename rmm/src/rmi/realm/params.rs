@@ -1,5 +1,5 @@
+use crate::config::{GRANULE_SHIFT, GRANULE_SIZE};
 use crate::const_assert_eq;
-use crate::granule::{GRANULE_SHIFT, GRANULE_SIZE};
 use crate::host::Accessor as HostAccessor;
 use crate::measurement::Hashable;
 use crate::rmi::features;

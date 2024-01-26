@@ -2,7 +2,8 @@ use core::mem::size_of;
 use vmsa::address::PhysAddr;
 
 use super::address::GuestPhysAddr;
-use crate::granule::{GranuleState, GRANULE_SIZE};
+use crate::config::GRANULE_SIZE;
+use crate::granule::GranuleState;
 use crate::realm::mm::page_table::pte::{attribute, shareable};
 use crate::realm::registry::get_realm;
 use crate::rmi::error::{Error, InternalError::NotExistRealm};

@@ -5,15 +5,12 @@ use self::entry::{Entry, Inner};
 use self::translation::{
     GranuleStatusTable, GRANULE_STATUS_TABLE, L0_TABLE_ENTRY_SIZE_RANGE, L1_TABLE_ENTRY_SIZE_RANGE,
 };
+use crate::config::GRANULE_SIZE;
 use crate::rmi::error::Error as RmiError;
 
 use vmsa::address::PhysAddr;
 use vmsa::error::Error;
 use vmsa::page_table::{HasSubtable, Level};
-
-pub const GRANULE_SIZE: usize = 4096;
-pub const GRANULE_SHIFT: usize = 12;
-pub const GRANULE_MASK: usize = !((1 << GRANULE_SHIFT) - 1);
 
 /// The Level 0 Table
 /// Each entry (L1table) covers 4mb. This is a configurable number.

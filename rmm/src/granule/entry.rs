@@ -4,7 +4,8 @@ use vmsa::guard::EntryGuard;
 use vmsa::page_table::{self, Level};
 
 use super::translation::{add_l1_table, addr_to_idx, get_l1_table_addr, L0_TABLE_ENTRY_SIZE_RANGE};
-use super::{GranuleState, GRANULE_SIZE};
+use super::GranuleState;
+use crate::config::GRANULE_SIZE;
 use spinning_top::Spinlock;
 
 extern crate alloc;

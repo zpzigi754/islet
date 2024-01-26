@@ -1,8 +1,9 @@
 #[macro_use]
 pub mod pointer;
 
+use crate::config::GRANULE_SIZE;
 use crate::granule::validate_addr;
-use crate::granule::{GranuleState, GRANULE_SIZE};
+use crate::granule::GranuleState;
 use crate::mm::translation::PageTable;
 
 use vmsa::guard::Content;

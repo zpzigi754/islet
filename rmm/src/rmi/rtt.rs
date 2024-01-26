@@ -2,10 +2,9 @@ extern crate alloc;
 
 use super::realm::{rd::State, Rd};
 use super::rec::Rec;
+use crate::config::{GRANULE_SHIFT, GRANULE_SIZE};
 use crate::event::Mainloop;
-use crate::granule::{
-    is_granule_aligned, is_not_in_realm, set_granule, GranuleState, GRANULE_SHIFT, GRANULE_SIZE,
-};
+use crate::granule::{is_granule_aligned, is_not_in_realm, set_granule, GranuleState};
 use crate::host::pointer::Pointer as HostPointer;
 use crate::host::DataPage;
 use crate::listen;

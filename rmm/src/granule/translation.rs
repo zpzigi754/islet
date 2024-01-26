@@ -1,6 +1,7 @@
 use super::entry;
-use super::{validate_addr, GranuleState, L0Table, L1Table, GRANULE_SIZE};
+use super::{validate_addr, GranuleState, L0Table, L1Table};
 use super::{FVP_DRAM0_REGION, FVP_DRAM1_REGION};
+use crate::config::GRANULE_SIZE;
 use crate::const_assert_eq;
 use vmsa::address::PhysAddr;
 use vmsa::error::Error;

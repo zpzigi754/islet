@@ -1,4 +1,4 @@
-use crate::granule::GRANULE_SIZE;
+use crate::config::GRANULE_SIZE;
 use crate::granule::{set_granule, GranuleState};
 use crate::mm::translation::PageTable;
 use crate::realm::mm::address::GuestPhysAddr;
