@@ -60,7 +60,7 @@ pub fn set_event_handler(mainloop: &mut Mainloop) {
         if params.rtt_base as usize % GRANULE_SIZE != 0 {
             return Err(Error::RmiErrorInput);
         }
-        let _ = get_granule_if!(params.rtt_base as usize, GranuleState::Delegated)?;
+        let _lock = get_granule_if!(params.rtt_base as usize, GranuleState::Delegated)?;
 
         // revisit rmi.create_realm() (is it necessary?)
         create_realm(params.vmid, params.rtt_base as usize).map(|id| {
