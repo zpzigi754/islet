@@ -265,26 +265,35 @@ fn verify_cca_token(buf: &[u8]) -> Result<(Vec<u8>, Vec<u8>), TokenError>
 
 pub fn verify_token(buf: &[u8]) -> Result<AttestationClaims, TokenError>
 {
+    println!("[CCH DEBUG] point 0 prime");
     let mut attest_claims = AttestationClaims::new();
+    println!("[CCH DEBUG] point 0");
 
     let (platform_token, realm_token) = verify_cca_token(&buf)?;
+    println!("[CCH DEBUG] point 1");
 
     verify_token_sign1(
         &realm_token.clone(),
         &mut attest_claims.realm_cose_sign1,
         &mut attest_claims.realm_cose_sign1_wrapper,
     )?;
+    println!("[CCH DEBUG] point 2");
     verify_token_sign1(
         &platform_token,
         &mut attest_claims.plat_cose_sign1,
         &mut attest_claims.plat_cose_sign1_wrapper,
     )?;
+    println!("[CCH DEBUG] point 3");
 
     verify_realm_token(&mut attest_claims)?;
+    println!("[CCH DEBUG] point 4");
     verify_platform_token(&mut attest_claims)?;
+    println!("[CCH DEBUG] point 5");
 
     let realm_key = attest_claims.realm_token_claims[4].data.get_bstr();
+    println!("[CCH DEBUG] point 6");
     cose::signing::verify(&realm_token, realm_key, b"").or(Err(TokenError::Signature))?;
+    println!("[CCH DEBUG] point 7");
 
     //let platform_key = external_source();
     //cose::signing::verify(&platform_token, platform_key, b"").or(Err(TokenError::Signature))?;

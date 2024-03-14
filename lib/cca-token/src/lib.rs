@@ -216,9 +216,12 @@ impl AttestationClaims
 
     pub(crate) fn new() -> Self
     {
+        println!("[CCH DEBUG] point 0 prime - 0");
         let mut claims = Self::default();
+        println!("[CCH DEBUG] point 0 prime - 1");
 
         Self::init_cose_sign1_claims(&mut claims.realm_cose_sign1_wrapper);
+        println!("[CCH DEBUG] point 0 prime - 2");
 
         claims.realm_token_claims[0].init(
             true,
@@ -227,6 +230,7 @@ impl AttestationClaims
             "Realm challenge",
             false,
         );
+        println!("[CCH DEBUG] point 0 prime - 3");
         claims.realm_token_claims[1].init(
             true,
             ClaimData::new_bstr(),
@@ -234,6 +238,7 @@ impl AttestationClaims
             "Realm personalization value",
             false,
         );
+        println!("[CCH DEBUG] point 0 prime - 4");
         claims.realm_token_claims[2].init(
             true,
             ClaimData::new_text(),
@@ -241,6 +246,7 @@ impl AttestationClaims
             "Realm hash algo id",
             false,
         );
+        println!("[CCH DEBUG] point 0 prime - 5");
         claims.realm_token_claims[3].init(
             true,
             ClaimData::new_text(),
@@ -248,6 +254,7 @@ impl AttestationClaims
             "Realm public key hash algo id",
             false,
         );
+        println!("[CCH DEBUG] point 0 prime - 6");
         claims.realm_token_claims[4].init(
             true,
             ClaimData::new_bstr(),
@@ -255,6 +262,7 @@ impl AttestationClaims
             "Realm signing public key",
             false,
         );
+        println!("[CCH DEBUG] point 0 prime - 7");
         claims.realm_token_claims[5].init(
             true,
             ClaimData::new_bstr(),
@@ -262,8 +270,10 @@ impl AttestationClaims
             "Realm initial measurement",
             false,
         );
+        println!("[CCH DEBUG] point 0 prime - 8");
 
         Self::init_cose_sign1_claims(&mut claims.plat_cose_sign1_wrapper);
+        println!("[CCH DEBUG] point 0 prime - 9");
 
         claims.plat_token_claims[0].init(
             true,
@@ -272,6 +282,7 @@ impl AttestationClaims
             "Challange",
             false,
         );
+        println!("[CCH DEBUG] point 0 prime - 10");
         claims.plat_token_claims[1].init(
             false,
             ClaimData::new_text(),
@@ -279,6 +290,7 @@ impl AttestationClaims
             "Verification service",
             false,
         );
+        println!("[CCH DEBUG] point 0 prime - 11");
         claims.plat_token_claims[2].init(
             true,
             ClaimData::new_text(),
@@ -286,6 +298,7 @@ impl AttestationClaims
             "Profile",
             false,
         );
+        println!("[CCH DEBUG] point 0 prime - 12");
         claims.plat_token_claims[3].init(
             true,
             ClaimData::new_bstr(),
@@ -293,6 +306,7 @@ impl AttestationClaims
             "Instance ID",
             false,
         );
+        println!("[CCH DEBUG] point 0 prime - 13");
         claims.plat_token_claims[4].init(
             true,
             ClaimData::new_bstr(),
@@ -300,6 +314,7 @@ impl AttestationClaims
             "Implementation ID",
             false,
         );
+        println!("[CCH DEBUG] point 0 prime - 14");
         claims.plat_token_claims[5].init(
             true,
             ClaimData::new_int64(),
@@ -307,6 +322,7 @@ impl AttestationClaims
             "Lifecycle",
             false,
         );
+        println!("[CCH DEBUG] point 0 prime - 15");
         claims.plat_token_claims[6].init(
             true,
             ClaimData::new_bstr(),
@@ -314,6 +330,7 @@ impl AttestationClaims
             "Configuration",
             false,
         );
+        println!("[CCH DEBUG] point 0 prime - 16");
         claims.plat_token_claims[7].init(
             true,
             ClaimData::new_text(),
@@ -333,9 +350,11 @@ impl AttestationClaims
             );
             count += 1;
         }
+        println!("[CCH DEBUG] point 0 prime - 17");
 
         for component in &mut claims.sw_component_claims {
             component.present = false;
+            println!("[CCH DEBUG] 17-0");
             component.claims[0].init(
                 true,
                 ClaimData::new_text(),
@@ -343,6 +362,7 @@ impl AttestationClaims
                 "SW Type",
                 false,
             );
+            println!("[CCH DEBUG] 17-1");
             component.claims[1].init(
                 false,
                 ClaimData::new_text(),
@@ -350,6 +370,7 @@ impl AttestationClaims
                 "Hash algorithm",
                 false,
             );
+            println!("[CCH DEBUG] 17-2");
             component.claims[2].init(
                 true,
                 ClaimData::new_bstr(),
@@ -357,6 +378,7 @@ impl AttestationClaims
                 "Measurement value",
                 false,
             );
+            println!("[CCH DEBUG] 17-3");
             component.claims[3].init(
                 false,
                 ClaimData::new_text(),
@@ -364,6 +386,7 @@ impl AttestationClaims
                 "Version",
                 false,
             );
+            println!("[CCH DEBUG] 17-4");
             component.claims[4].init(
                 true,
                 ClaimData::new_bstr(),
@@ -371,7 +394,9 @@ impl AttestationClaims
                 "Signer ID",
                 false,
             );
+            println!("[CCH DEBUG] 17-5");
         }
+        println!("[CCH DEBUG] point 0 prime - 18");
 
         claims
     }

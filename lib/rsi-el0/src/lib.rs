@@ -63,5 +63,6 @@ pub fn attestation_token(challenge: &[u8; CHALLENGE_LEN as usize]) -> nix::Resul
     let mut attest = [kernel::RsiAttestation::new(challenge)];
     let fd = Fd::wrap(nix::fcntl::open(DEV, FLAGS, MODE)?);
     kernel::attestation_token(fd.get(), &mut attest)?;
+    println!("[CCH DEBUG] attestation token succeded");
     Ok(attest[0].token[..(attest[0].token_len as usize)].to_vec())
 }

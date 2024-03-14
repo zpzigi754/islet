@@ -320,11 +320,15 @@ static long device_ioctl(struct file *f, unsigned int cmd, unsigned long arg)
 			goto end;
 		}
 
+		printk(RSI_INFO "[CCH DEBUG] do attestation succeded");
+
 		ret = copy_to_user((struct rsi_attestation*)arg, attest, sizeof(struct rsi_attestation));
 		if (ret != 0) {
 			printk(RSI_ALERT "ioctl: copy_to_user failed: %d\n", ret);
 			goto end;
 		}
+
+		printk(RSI_INFO "[CCH DEBUG] copy to user succeded");
 
 		break;
 	default:

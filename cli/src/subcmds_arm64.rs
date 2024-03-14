@@ -94,7 +94,16 @@ pub(crate) fn attest(args: &AttestArgs) -> GenericResult
     }
 
     // TODO: Error handling
-    let token = &islet_sdk::attester::attest(&challenge).unwrap().buffer;
+    //let token = &islet_sdk::attester::attest(&challenge).unwrap().buffer;
+    let res = islet_sdk::attester::attest(&challenge);
+    println!("[CCH DEBUG] after attest");
+    let report = if let Ok(x) = res {
+        x
+    } else {
+        println!("[CCH DEBUG] error case");
+        return Err(Box::new(nix::Error::EINVAL)); //FIXME
+    };
+    let token = &report.buffer;
 
     match &args.output {
         None => tools::verify_print(token)?,

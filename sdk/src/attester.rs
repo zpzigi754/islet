@@ -41,7 +41,9 @@ pub fn attest(user_data: &[u8]) -> Result<Report, Error> {
         if #[cfg(target_arch="x86_64")] {
             attest_x86_64(user_data)
         } else {
-            attest_aarch64(user_data)
+            let res = attest_aarch64(user_data);
+            println!("[CCH DEBUG] attest_aarch64 succeeded");
+            return res;
         }
     }
 }

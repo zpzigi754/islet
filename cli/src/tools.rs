@@ -14,6 +14,7 @@ pub(crate) fn file_read(filename: &str) -> std::io::Result<Vec<u8>>
 
 pub(crate) fn file_write(filename: &str, data: &[u8]) -> std::io::Result<()>
 {
+    println!("[CCH DEBUG] file_write before");
     File::create(filename)?.write_all(data)
 }
 
