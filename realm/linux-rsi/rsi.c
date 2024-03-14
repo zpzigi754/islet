@@ -26,6 +26,9 @@ MODULE_DESCRIPTION("Linux RSI playground");
 
 #define DEVICE_NAME       "rsi"       /* Name of device in /proc/devices */
 
+// TODO: share the value with RMM
+#define MEASUREMENT_SIZE  32          /* The current size of the measurement value in bytes */
+
 static int device_major;              /* Major number assigned to our device driver */
 static int device_open_count = 0;     /* Used to prevent multiple open */
 static struct class *cls;
@@ -133,7 +136,9 @@ static int do_measurement_read(struct rsi_measurement *measur)
 	if (output.a0 != RSI_SUCCESS)
 		return -rsi_ret_to_errno(output.a0);
 
-	measur->data_len = sizeof(output.a1) * 8;
+	// sizeof(output.a1) * 8 is the maximum size of the measurement value
+	// which is not always equal to the current size of the measurement value.
+	measur->data_len = MEASUREMENT_SIZE;
 	memcpy(measur->data, (uint8_t*)&output.a1, measur->data_len);
 
 	return 0;
