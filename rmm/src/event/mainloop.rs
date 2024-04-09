@@ -39,6 +39,8 @@ impl Mainloop {
     fn add_event_handlers(&mut self) {
         #[cfg(feature = "mc_rmi_features")]
         rmi::features::set_event_handler(self);
+        #[cfg(feature = "mc_rmi_version")]
+        rmi::version::set_event_handler(self);
     }
 
     #[cfg(not(kani))]
