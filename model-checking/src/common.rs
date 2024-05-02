@@ -1,5 +1,8 @@
 use islet_rmm::granule::array::{GRANULE_REGION, GRANULE_SIZE};
 use islet_rmm::granule::entry::GranuleGpt;
+use islet_rmm::granule::validate_addr;
+use islet_rmm::realm::rd::Rd;
+use islet_rmm::realm::rd::State; // tmp
 
 extern "C" {
     fn CPROVER_havoc_object(address: usize);
@@ -75,6 +78,19 @@ pub fn pre_granule_gpt(addr: usize) -> GranuleGpt {
 // `unwrap()` is guaranteed not to be reached.
 pub fn post_granule_gpt(addr: usize) -> GranuleGpt {
     get_granule!(addr).map(|guard| guard.gpt).unwrap()
+}
+
+pub fn pre_rd_state(addr: usize) -> State {
+    let realm_state_init = get_granule!(addr).map(|guard| guard.index_to_addr());
+    let realm_state_addr = if let Ok(addr) = realm_state_init {
+        addr
+    } else {
+        let addr = kani::any();
+        kani::assume(validate_addr(addr));
+        addr
+    };
+    let realm_state_rd = unsafe { &mut *(realm_state_addr as *mut Rd) };
+    realm_state_rd.state()
 }
 
 pub fn initialize() {

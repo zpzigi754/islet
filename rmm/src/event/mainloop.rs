@@ -44,6 +44,8 @@ impl Mainloop {
             feature = "mc_rmi_granule_undelegate"
         ))]
         rmi::gpt::set_event_handler(self);
+        #[cfg(feature = "mc_rmi_realm_activate")]
+        rmi::realm::set_event_handler(self);
     }
 
     #[cfg(not(kani))]
