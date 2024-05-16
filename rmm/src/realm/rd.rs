@@ -103,7 +103,6 @@ impl Content for Rd {}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum State {
-    Null,
     New,
     Active,
     SystemOff,
