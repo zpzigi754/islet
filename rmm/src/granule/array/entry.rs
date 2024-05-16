@@ -73,6 +73,15 @@ impl Granule {
         if self.state != GranuleState::Undelegated {
             self.gpt == GranuleGpt::GPT_REALM
         } else {
+            let is_inner_valid = match self.state {
+                GranuleState::RD => {
+                    use crate::realm::rd::Rd;
+                    let _rd = self.content::<Rd>();
+                    true
+                },
+                _ => true,
+            };
+            is_inner_valid &&
             self.gpt != GranuleGpt::GPT_REALM
         }
     }
