@@ -2,6 +2,7 @@ use crate::common::addr_is_granule_aligned;
 use crate::common::initialize;
 use crate::common::{post_rd_state, pre_granule_state, pre_rd_state};
 use crate::get_granule;
+use islet_rmm::granule::array::GRANULE_STATUS_TABLE;
 use islet_rmm::granule::validate_addr;
 use islet_rmm::granule::GranuleState;
 use islet_rmm::monitor::Monitor;
@@ -14,6 +15,7 @@ use islet_rmm::rmi::error::Error;
 #[kani::unwind(9)]
 fn verify_realm_activate() {
     initialize();
+    assert!(GRANULE_STATUS_TABLE.is_valid());
 
     // Initialize registers (symbolic input)
     let regs: [usize; 8] = kani::any();

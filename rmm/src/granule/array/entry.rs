@@ -50,6 +50,18 @@ impl Granule {
         kani::assume(state >= GranuleState::Undelegated && state <= GranuleState::RTT);
         let gpt = {
             if state != GranuleState::Undelegated {
+                match state {
+                    GranuleState::RD => {
+                        // index_to_addr()
+                        use crate::granule::GRANULE_REGION;
+                        use crate::realm::rd::Rd;
+                        let addr = GRANULE_REGION.as_ptr() as usize + (idx * GRANULE_SIZE);
+                        // content()
+                        let rd = unsafe { &*(addr as *const Rd) };
+                        kani::assume(rd.is_valid());
+                    }
+                    _ => {}
+                };
                 GranuleGpt::GPT_REALM
             } else {
                 let gpt = kani::any();
@@ -71,6 +83,15 @@ impl Granule {
         self.state <= GranuleState::RTT &&
         // XXX: the below condition holds from beta0 to eac4
         if self.state != GranuleState::Undelegated {
+            let is_inner_valid = match self.state {
+                GranuleState::RD => {
+                    use crate::realm::rd::Rd;
+                    let rd = self.content::<Rd>();
+                    rd.is_valid()
+                },
+                _ => true,
+            };
+            is_inner_valid &&
             self.gpt == GranuleGpt::GPT_REALM
         } else {
             self.gpt != GranuleGpt::GPT_REALM

@@ -45,6 +45,12 @@ impl Rd {
         self.vcpus = Vec::new();
     }
 
+    #[cfg(kani)]
+    pub fn is_valid(&self) -> bool {
+        //self.ipa_bits > 0 && self.ipa_bits <= 64
+        true
+    }
+
     pub fn id(&self) -> usize {
         self.vmid as usize
     }
