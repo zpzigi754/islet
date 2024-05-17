@@ -24,6 +24,8 @@ pub struct Granule {
     state: u8,
     /// granule protection table (ghost field)
     pub gpt: GranuleGpt,
+    /// granule index (ghost field)
+    pub idx: usize,
 }
 
 #[cfg(kani)]
@@ -42,7 +44,8 @@ impl Granule {
     }
     #[cfg(kani)]
     // DIFF: `state` and `gpt` are filled with non-deterministic values
-    fn new() -> Self {
+    //       `idx` is passed
+    fn new(idx: usize) -> Self {
         let state = kani::any();
         kani::assume(state >= GranuleState::Undelegated && state <= GranuleState::RTT);
         let gpt = {
@@ -54,7 +57,7 @@ impl Granule {
                 gpt
             }
         };
-        Granule { state, gpt }
+        Granule { state, gpt, idx }
     }
 
     #[cfg(kani)]
@@ -99,6 +102,7 @@ impl Granule {
         unsafe { &*(addr as *const T) }
     }
 
+    #[cfg(not(kani))]
     fn index(&self) -> usize {
         let entry_size = core::mem::size_of::<Entry>();
         let granule_size = core::mem::size_of::<Granule>();
@@ -111,6 +115,11 @@ impl Granule {
         let gst = &GRANULE_STATUS_TABLE;
         let table_base = gst.entries.as_ptr() as usize;
         (entry_addr - table_base) / core::mem::size_of::<Entry>()
+    }
+    #[cfg(kani)]
+    // DIFF: the inner `idx` field is used directly without calculation
+    fn index(&self) -> usize {
+        self.idx
     }
 
     #[cfg(not(kani))]
@@ -161,8 +170,9 @@ impl Entry {
     }
     #[cfg(kani)]
     // DIFF: assertion is added to reduce the proof burden
-    pub fn new() -> Self {
-        let granule = Granule::new();
+    //       `idx` is passed
+    pub fn new(idx: usize) -> Self {
+        let granule = Granule::new(idx);
         assert!(granule.is_valid());
         Self(Spinlock::new(granule))
     }

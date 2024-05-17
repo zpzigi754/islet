@@ -126,9 +126,17 @@ pub struct GranuleStatusTable {
 }
 
 impl GranuleStatusTable {
+    #[cfg(not(kani))]
     pub fn new() -> Self {
         Self {
             entries: core::array::from_fn(|_| Entry::new()),
+        }
+    }
+    #[cfg(kani)]
+    // DIFF: `idx` is passed
+    pub fn new() -> Self {
+        Self {
+            entries: core::array::from_fn(|idx| Entry::new(idx)),
         }
     }
 
