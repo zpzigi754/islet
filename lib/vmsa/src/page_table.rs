@@ -12,11 +12,13 @@ use core::marker::PhantomData;
 //  - As of now, concurrency safety for RTT and Realm page table is achieved by a big lock.
 //  - If we want to use entry-level locking for a better efficiency, several pieces of codes in this file should be modified accordingly.
 
+const NUM_ENTRIES: usize = 512;
+
 pub trait Level {
     const THIS_LEVEL: usize;
     const TABLE_SIZE: usize;
     const TABLE_ALIGN: usize;
-    const NUM_ENTRIES: usize;
+    const NUM_ENTRIES: usize; // TODO: remove this later
 }
 
 pub trait HasSubtable: Level {
@@ -295,7 +297,7 @@ impl<A: Address, L: HasSubtable, E: Entry, const N: usize> PageTableMethods<A, L
     for PageTable<A, L, E, N>
 where
     L::NextLevel: Level,
-    [E; L::NextLevel::NUM_ENTRIES]: Sized,
+    [E; NUM_ENTRIES]: Sized,
 {
     fn entry<S: PageSize, F: FnMut(&mut E) -> Result<Option<EntryGuard<'_, E::Inner>>, Error>>(
         &mut self,
@@ -362,13 +364,13 @@ where
                         .unwrap(),
                     )
                 }
-                    as *mut PageTable<A, L::NextLevel, E, { L::NextLevel::NUM_ENTRIES }>;
+                    as *mut PageTable<A, L::NextLevel, E, NUM_ENTRIES>;
 
                 if subtable as usize != 0 {
                     let subtable_ptr = subtable
-                        as *mut PageTable<A, L::NextLevel, E, { L::NextLevel::NUM_ENTRIES }>;
+                        as *mut PageTable<A, L::NextLevel, E, NUM_ENTRIES>;
                     unsafe {
-                        let arr: [E; L::NextLevel::NUM_ENTRIES] =
+                        let arr: [E; NUM_ENTRIES] =
                             core::array::from_fn(|_| E::new());
                         (*subtable_ptr).entries = arr;
                     }
