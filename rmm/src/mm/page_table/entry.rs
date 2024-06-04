@@ -1,10 +1,10 @@
 use super::attr;
 
 use attr::mair_idx;
-use vmsa::address::PhysAddr;
-use vmsa::error::Error;
-use vmsa::page_table::{self, Level};
-use vmsa::RawGPA;
+use vmsa_no_level::address::PhysAddr;
+use vmsa_no_level::error::Error;
+use vmsa_no_level::page_table::{self, Level};
+use vmsa_no_level::RawGPA;
 
 use armv9a::{define_bitfield, define_bits, define_mask};
 
@@ -100,6 +100,16 @@ impl page_table::Entry for Entry {
 
     fn index<L: Level>(addr: usize) -> usize {
         match L::THIS_LEVEL {
+            0 => RawGPA::from(addr).get_masked_value(RawGPA::L0Index) as usize,
+            1 => RawGPA::from(addr).get_masked_value(RawGPA::L1Index) as usize,
+            2 => RawGPA::from(addr).get_masked_value(RawGPA::L2Index) as usize,
+            3 => RawGPA::from(addr).get_masked_value(RawGPA::L3Index) as usize,
+            _ => panic!(),
+        }
+    }
+
+    fn index_with_level(addr: usize, level: usize) -> usize {
+        match level {
             0 => RawGPA::from(addr).get_masked_value(RawGPA::L0Index) as usize,
             1 => RawGPA::from(addr).get_masked_value(RawGPA::L1Index) as usize,
             2 => RawGPA::from(addr).get_masked_value(RawGPA::L2Index) as usize,

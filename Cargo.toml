@@ -6,6 +6,7 @@ members = [
     "lib/cose",
     "lib/safe-abstraction",
     "lib/vmsa",
+    "lib/vmsa-no-level",
     "lib/rsi-el0",
     "lib/uart",
     "plat/fvp",

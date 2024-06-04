@@ -15,6 +15,7 @@ linked_list_allocator = "0.10.4"
 lock_api = "0.4.9"
 log = "0.4.17"
 vmsa = { path = "../lib/vmsa" }
+vmsa_no_level = { path = "../lib/vmsa-no-level" }
 p384 = { version = "*", default-features = false, features = ["alloc", "ecdsa"] }
 ecdsa = "*"
 safe_abstraction = { path = "../lib/safe-abstraction" }

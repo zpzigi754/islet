@@ -4,10 +4,10 @@ use crate::config::{PAGE_SIZE, RMM_SHARED_BUFFER_START};
 use crate::mm::page::BasePageSize;
 use crate::mm::page_table::entry::PTDesc;
 
-use vmsa::address::{PhysAddr, VirtAddr};
-use vmsa::page::Page;
-use vmsa::page_table::PageTable as RootPageTable;
-use vmsa::page_table::{Level, PageTableMethods};
+use vmsa_no_level::address::{PhysAddr, VirtAddr};
+use vmsa_no_level::page::Page;
+use vmsa_no_level::page_table::PageTable as RootPageTable;
+use vmsa_no_level::page_table::{Level, PageTableMethods};
 
 use armv9a::bits_in_reg;
 use core::ffi::c_void;
@@ -59,14 +59,14 @@ struct Inner<'a> {
     // We will set the translation granule with 4KB.
     // To reduce the level of page lookup, initial lookup will start from L1.
     root_pgtlb:
-        &'a mut RootPageTable<VirtAddr, L1Table, Entry, { <L1Table as Level>::NUM_ENTRIES }>,
+        &'a mut RootPageTable<VirtAddr, Entry, { <L1Table as Level>::NUM_ENTRIES }>,
     dirty: bool,
 }
 
 impl<'a> Inner<'a> {
     pub fn new() -> Self {
         let root_pgtlb = unsafe {
-            &mut *RootPageTable::<VirtAddr, L1Table, Entry, { <L1Table as Level>::NUM_ENTRIES }>::new_with_align(
+            &mut *RootPageTable::<VirtAddr, Entry, { <L1Table as Level>::NUM_ENTRIES }>::new_with_align(
                 NUM_ROOT_PAGE,
                 ALIGN_ROOT_PAGE,
             )
@@ -136,7 +136,7 @@ impl<'a> Inner<'a> {
 
         if self
             .root_pgtlb
-            .set_pages(virtaddr, phyaddr, flags, false)
+            .set_pages(1, virtaddr, phyaddr, flags, false)
             .is_err()
         {
             warn!("set_pages error");
@@ -146,7 +146,7 @@ impl<'a> Inner<'a> {
     fn unset_page(&mut self, addr: usize) {
         let va = VirtAddr::from(addr);
         let page = Page::<BasePageSize, VirtAddr>::including_address(va);
-        self.root_pgtlb.unset_page(page);
+        self.root_pgtlb.unset_page(1, page);
     }
 
     fn set_pages_for_rmi(&mut self, addr: usize, secure: bool) -> bool {
