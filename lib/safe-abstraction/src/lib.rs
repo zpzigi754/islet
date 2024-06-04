@@ -1,7 +1,7 @@
 #![warn(rust_2018_idioms)]
 #![deny(warnings)]
 #![no_std]
-#![feature(error_in_core)]
+//#![feature(error_in_core)]
 
 //! # Safe Abstraction Crate
 //!
@@ -182,7 +182,7 @@ pub mod raw_ptr {
         }
     }
 
-    impl core::error::Error for Error {}
+//    impl core::error::Error for Error {}
 
     /// Attempts to create a `SafetyAssumed` instance from a address.
     ///
