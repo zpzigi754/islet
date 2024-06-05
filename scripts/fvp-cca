@@ -194,6 +194,9 @@ def prepare_bootloaders(rmm, bl33, hes):
     elif rmm == "tf-rmm":
         args += "RMM=%s/tf-rmm.img" % OUT,
 
+    elif rmm == "verified":
+        args += "RMM=%s/rmm.bin" % OUT,
+
     args += ["all", "fip"]
 
     bl_list = ["bl1.bin", "fip.bin"]
@@ -236,8 +239,8 @@ def get_rmm_features(args):
             features += ["--features", "stat"]
         if args.realm == "linux" or args.realm == "aosp" or args.use_prebuilt == True:
             features += ["--features", "realm_linux"]
-        if args.normal_world == "acs":
-            features += ["--features", "gst_page_table"]
+        #if args.normal_world == "acs":
+        #    features += ["--features", "gst_page_table"]
 
     if features:
         print("[!] Setting", args.rmm, "features:", features)
@@ -259,6 +262,12 @@ def prepare_rmm(rmm, features):
              cwd=ROOT)
     elif rmm == "tf-rmm":
         run(["./scripts/build-tf-rmm.sh", CROSS_COMPILE], cwd=ROOT)
+    elif rmm == "verified":
+        print("[!] Using verified islet...")
+        run(["%sobjcopy" % CROSS_COMPILE, "-O", "binary",
+             "%s/main" % VERUS,
+             "%s/rmm.bin" % OUT],
+             cwd=ROOT)
 
 def prepare_nw_linux(fvp_ip, host_ip, realm_launch):
     args = [
@@ -593,7 +602,7 @@ def validate_args(args):
         print("  " + "\n  ".join(nw_list))
         sys.exit(1)
 
-    rmm_list = ["islet", "trp", "tf-rmm"]
+    rmm_list = ["islet", "trp", "tf-rmm", "verified"]
     if not args.rmm in rmm_list:
         print("Please select one of the rmm components:")
         print("  " + "\n  ".join(rmm_list))

@@ -4,6 +4,7 @@ import os
 
 ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
 OUT = os.path.join(ROOT, "out")
+VERUS = os.path.join(ROOT, "../verus/source")
 
 SCRIPT = os.path.join(ROOT, "scripts")
 FVP_CONFIG = os.path.join(SCRIPT, ".config")
