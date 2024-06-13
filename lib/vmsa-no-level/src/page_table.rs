@@ -73,7 +73,7 @@ pub trait Entry {
         }
     }
     fn index<L: Level>(addr: usize) -> usize;
-    fn index_with_level(addr: usize, level: usize) -> usize;
+    fn index_with_level(addr: usize, level: usize, is_root: bool) -> usize;
 
     fn subtable(&self, _index: usize, level: usize) -> Result<usize, Error> {
         match self.address(level) {
@@ -141,6 +141,7 @@ pub trait PageTableMethods<A: Address, E: Entry, const N: usize> {
         phys: Page<S, PhysAddr>,
         flags: u64,
         is_raw: bool,
+        is_root: bool,
     ) -> Result<(), Error>;
     /// Traverses page table entries recursively and calls the callback for the lastly reached entry
     ///
@@ -164,6 +165,7 @@ pub trait PageTableMethods<A: Address, E: Entry, const N: usize> {
         last_level: usize,
         no_valid_check: bool,
         func: F,
+        is_root: bool,
     ) -> Result<(Option<EntryGuard<'_, E::Inner>>, usize), Error>;
     fn drop(&mut self);
     fn unset_page<S: PageSize>(&mut self, level: usize, guest: Page<S, A>);
@@ -221,7 +223,7 @@ impl<A: Address, E: Entry, const N: usize> PageTableMethods<A, E, N>
         let mut phys = phys;
         for guest in guest {
             let phys = phys.next().unwrap();
-            match self.set_page(level, guest, phys, flags, is_raw) {
+            match self.set_page(level, guest, phys, flags, is_raw, true) {
                 Ok(_) => {}
                 Err(e) => {
                     return Err(e);
@@ -238,10 +240,11 @@ impl<A: Address, E: Entry, const N: usize> PageTableMethods<A, E, N>
         phys: Page<S, PhysAddr>,
         flags: u64,
         is_raw: bool,
+        is_root: bool,
     ) -> Result<(), Error> {
         assert!(level <= S::MAP_TABLE_LEVEL);
 
-        let index = E::index_with_level(guest.address().into(), level);
+        let index = E::index_with_level(guest.address().into(), level, is_root);
 
         if level < S::MAP_TABLE_LEVEL {
             self.entries[index].set_with_page_table_flags_via_alloc(index, || {
@@ -270,7 +273,7 @@ impl<A: Address, E: Entry, const N: usize> PageTableMethods<A, E, N>
             })?;
 
             // map the page in the subtable (recursive)
-            self.subtable_and_set_page(level, guest, phys, flags, is_raw)
+            self.subtable_and_set_page(level, guest, phys, flags, is_raw, is_root)
         } else if level == S::MAP_TABLE_LEVEL {
             // Map page in this level page table
             if is_raw {
@@ -290,20 +293,21 @@ impl<A: Address, E: Entry, const N: usize> PageTableMethods<A, E, N>
         last_level: usize,
         no_valid_check: bool,
         mut func: F,
+        is_root: bool,
     ) -> Result<(Option<EntryGuard<'_, E::Inner>>, usize), Error> {
         assert!(this_level <= S::MAP_TABLE_LEVEL);
 
         if last_level > S::MAP_TABLE_LEVEL {
             return Err(Error::MmInvalidLevel);
         }
-        let index = E::index_with_level(page.address().into(), this_level);
+        let index = E::index_with_level(page.address().into(), this_level, is_root);
 
         if no_valid_check {
             if this_level < last_level {
                 // Need to go deeper (recursive)
-                match self.subtable::<S>(this_level, page) {
+                match self.subtable::<S>(this_level, page, is_root) {
                     // TODO: is it okay to pass next level here?
-                    Ok(subtable) => subtable.entry(this_level + 1, page, last_level, no_valid_check, func),
+                    Ok(subtable) => subtable.entry(this_level + 1, page, last_level, no_valid_check, func, false),
                     Err(_e) => Ok((None, this_level)),
                 }
             } else {
@@ -315,8 +319,8 @@ impl<A: Address, E: Entry, const N: usize> PageTableMethods<A, E, N>
                 true => {
                     if this_level < last_level {
                         // Need to go deeper (recursive)
-                        match self.subtable::<S>(this_level, page) {
-                            Ok(subtable) => subtable.entry(this_level + 1, page, last_level, no_valid_check, func),
+                        match self.subtable::<S>(this_level, page, is_root) {
+                            Ok(subtable) => subtable.entry(this_level + 1, page, last_level, no_valid_check, func, false),
                             Err(_e) => Ok((None, this_level)),
                         }
                     } else {
@@ -339,12 +343,12 @@ impl<A: Address, E: Entry, const N: usize> PageTableMethods<A, E, N>
     }
 
     fn unset_page<S: PageSize>(&mut self, level: usize, guest: Page<S, A>) {
-        let index = E::index_with_level(guest.address().into(), level);
+        let index = E::index_with_level(guest.address().into(), level, true);
         if self.entries[index].is_valid() {
             let _res = self.entry(level, guest, S::MAP_TABLE_LEVEL, false, |e| {
                 e.clear();
                 Ok(None)
-            });
+            }, true);
         }
     }
 }
@@ -356,10 +360,11 @@ impl<A: Address, E: Entry, const N: usize> PageTable<A, E, N>
         &self,
         level: usize,
         page: Page<S, A>,
+        is_root: bool,
     ) -> Result<&mut PageTable<A, E, N>, Error> {
         assert!(level < S::MAP_TABLE_LEVEL);
 
-        let index = E::index_with_level(page.address().into(), level);
+        let index = E::index_with_level(page.address().into(), level, is_root);
         match self.entries[index].subtable(index, level) {
             Ok(table_addr) => {
                 Ok(unsafe { &mut *(table_addr as *mut PageTable<A, E, N>) })
@@ -375,14 +380,15 @@ impl<A: Address, E: Entry, const N: usize> PageTable<A, E, N>
         phys: Page<S, PhysAddr>,
         flags: u64,
         is_raw: bool,
+        is_root: bool,
     ) -> Result<(), Error> {
         assert!(level < S::MAP_TABLE_LEVEL);
 
-        let index = E::index_with_level(page.address().into(), level);
+        let index = E::index_with_level(page.address().into(), level, is_root);
         let table_addr = self.entries[index].subtable(index, level)?;
         let table = unsafe { &mut *(table_addr as *mut PageTable<A, E, N>) };
         // XXX: should we pass next level?
         let next_level = level + 1;
-        table.set_page(next_level, page, phys, flags, is_raw)
+        table.set_page(next_level, page, phys, flags, is_raw, false)
     }
 }

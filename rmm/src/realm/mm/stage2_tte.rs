@@ -1,5 +1,5 @@
 use core::mem::size_of;
-use vmsa::address::PhysAddr;
+use vmsa_no_level::address::PhysAddr;
 
 use super::address::GuestPhysAddr;
 use crate::granule::GRANULE_SIZE;
