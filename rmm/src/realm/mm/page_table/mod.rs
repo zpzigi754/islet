@@ -1,6 +1,6 @@
 use crate::const_assert_size;
 use crate::realm::mm::address::GuestPhysAddr;
-use vmsa::page_table::{HasSubtable, Level, PageTable};
+use vmsa_no_level::page_table::{HasSubtable, Level, PageTable};
 
 use crate::config::PAGE_SIZE;
 use entry::Entry;
@@ -76,7 +76,7 @@ impl Level for L3Table {
     const NUM_ENTRIES: usize = (Self::TABLE_SIZE / core::mem::size_of::<Entry>());
 }
 
-const_assert_size!(PageTable<GuestPhysAddr, L0Table, Entry, { L0Table::NUM_ENTRIES }>, PAGE_SIZE);
-const_assert_size!(PageTable<GuestPhysAddr, L1Table, Entry, { L1Table::NUM_ENTRIES }>, PAGE_SIZE);
-const_assert_size!(PageTable<GuestPhysAddr, L2Table, Entry, { L2Table::NUM_ENTRIES }>, PAGE_SIZE);
-const_assert_size!(PageTable<GuestPhysAddr, L3Table, Entry, { L3Table::NUM_ENTRIES }>, PAGE_SIZE);
+const_assert_size!(PageTable<GuestPhysAddr, Entry, { L0Table::NUM_ENTRIES }>, PAGE_SIZE);
+const_assert_size!(PageTable<GuestPhysAddr, Entry, { L1Table::NUM_ENTRIES }>, PAGE_SIZE);
+const_assert_size!(PageTable<GuestPhysAddr, Entry, { L2Table::NUM_ENTRIES }>, PAGE_SIZE);
+const_assert_size!(PageTable<GuestPhysAddr, Entry, { L3Table::NUM_ENTRIES }>, PAGE_SIZE);

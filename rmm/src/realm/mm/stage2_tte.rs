@@ -1,5 +1,5 @@
 use core::mem::size_of;
-use vmsa::address::PhysAddr;
+use vmsa_no_level::address::PhysAddr;
 
 use super::address::GuestPhysAddr;
 use crate::granule::GRANULE_SIZE;
@@ -8,7 +8,7 @@ use crate::realm::rd::Rd;
 use crate::rmi::error::Error;
 use crate::rmi::rtt::{RTT_MIN_BLOCK_LEVEL, RTT_PAGE_LEVEL};
 use armv9a::{define_bitfield, define_bits, define_mask};
-use vmsa::guard::Content;
+use vmsa_no_level::guard::Content;
 
 pub const INVALID_UNPROTECTED: u64 = 0x0;
 

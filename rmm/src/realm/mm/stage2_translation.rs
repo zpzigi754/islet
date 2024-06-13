@@ -9,16 +9,18 @@ use crate::realm::mm::translation_granule_4k::RawPTE;
 use crate::realm::mm::IPATranslation;
 use crate::rmi::error::Error;
 use alloc::alloc::Layout;
-use vmsa::address::PhysAddr;
-use vmsa::page::{Page, PageIter, PageSize};
-use vmsa::page_table::Entry;
-use vmsa::page_table::{Level, MemAlloc, PageTable, PageTableMethods};
+use vmsa_no_level::address::PhysAddr;
+use vmsa_no_level::page::{Page, PageIter, PageSize};
+use vmsa_no_level::page_table::Entry;
+use vmsa_no_level::page_table::{Level, MemAlloc, PageTable, PageTableMethods};
 
 use armv9a::{bits_in_reg, define_bitfield, define_bits, define_mask};
 
 // initial lookup starts at level 1 with 2 page tables concatenated
 pub const NUM_ROOT_PAGE: usize = 2;
 pub const ALIGN_ROOT_PAGE: usize = 2;
+
+const NUM_ENTRIES: usize = 512; // CCH added
 
 pub mod tlbi_ns {
     pub const IPAS_S: u64 = 0b0;
@@ -34,7 +36,7 @@ const ENTR8: usize = ENTR1 * 8;
 const ENTR16: usize = ENTR1 * 16;
 
 type RootTBL<'a, const L: usize, const N: usize, const E: usize> =
-    &'a mut PageTable<GuestPhysAddr, RootTable<{ L }, { N }>, entry::Entry, { E }>;
+    &'a mut PageTable<GuestPhysAddr, entry::Entry, { E }>;
 
 pub enum Root<'a> {
     L0N1(RootTBL<'a, 0, 1, ENTR1>),
@@ -52,9 +54,8 @@ macro_rules! init_table {
     ($level:expr, $pages:expr, $base:expr) => {
         &mut *PageTable::<
             GuestPhysAddr,
-            RootTable<$level, $pages>,
             entry::Entry,
-            { <RootTable<$level, $pages> as Level>::NUM_ENTRIES },
+            { $pages * NUM_ENTRIES },
         >::new_with_base($base)
         .unwrap()
     };
@@ -159,7 +160,8 @@ impl<'a> MemAlloc for Stage2Translation<'a> {
 // ipa_to_pa closure
 macro_rules! to_pa {
     ($root:expr, $guest:expr, $level:expr, $pa:expr) => {
-        $root.entry($guest, $level, false, |entry| {
+// TODO: check the below again
+        $root.entry(0, $guest, $level, false, |entry| {
             $pa = entry.address(0);
             Ok(None)
         })
@@ -169,7 +171,8 @@ macro_rules! to_pa {
 // ipa_to_pa closure
 macro_rules! to_pte {
     ($root:expr, $guest:expr, $level:expr, $pte:expr) => {
-        $root.entry($guest, $level, true, |entry| {
+// TODO: check the below again
+        $root.entry(0, $guest, $level, true, |entry| {
             $pte = entry.pte();
             Ok(None)
         })
@@ -179,7 +182,8 @@ macro_rules! to_pte {
 // ipa_to_pte_set clousre
 macro_rules! set_pte {
     ($root:expr, $guest:expr, $level:expr, $val:expr) => {
-        $root.entry($guest, $level, true, |entry| {
+// TODO: check the below again
+        $root.entry(0, $guest, $level, true, |entry| {
             let pte = entry.mut_pte();
             *pte = RawPTE($val);
             Ok(None)

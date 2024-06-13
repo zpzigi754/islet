@@ -1,7 +1,7 @@
 use super::page_table::pte;
 use super::translation_granule_4k::RawPTE;
 use crate::config::{HUGE_PAGE_SIZE, LARGE_PAGE_SIZE, PAGE_SIZE};
-use vmsa::page::PageSize;
+use vmsa_no_level::page::PageSize;
 
 use armv9a::bits_in_reg;
 

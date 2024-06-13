@@ -2,10 +2,10 @@ use super::pte;
 use super::L3Table;
 use crate::config::PAGE_SIZE;
 use crate::realm::mm::translation_granule_4k::RawPTE;
-use vmsa::address::PhysAddr;
-use vmsa::error::Error;
-use vmsa::page_table::{self, Level};
-use vmsa::RawGPA;
+use vmsa_no_level::address::PhysAddr;
+use vmsa_no_level::error::Error;
+use vmsa_no_level::page_table::{self, Level};
+use vmsa_no_level::RawGPA;
 
 use armv9a::bits_in_reg;
 
