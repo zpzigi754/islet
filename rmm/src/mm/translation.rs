@@ -136,7 +136,7 @@ impl<'a> Inner<'a> {
 
         if self
             .root_pgtlb
-            .set_pages(1, virtaddr, phyaddr, flags, false)
+            .set_pages(1, virtaddr, phyaddr, flags, false, 1)
             .is_err()
         {
             warn!("set_pages error");
@@ -146,7 +146,7 @@ impl<'a> Inner<'a> {
     fn unset_page(&mut self, addr: usize) {
         let va = VirtAddr::from(addr);
         let page = Page::<BasePageSize, VirtAddr>::including_address(va);
-        self.root_pgtlb.unset_page(1, page);
+        self.root_pgtlb.unset_page(1, page, 1);
     }
 
     fn set_pages_for_rmi(&mut self, addr: usize, secure: bool) -> bool {
