@@ -6,3 +6,6 @@ rustflags = [
   "-C", "link-args=-Tplat/fvp/memory.x",
   "-C", "target-feature=+ecv"
 ]
+
+[profile.release]
+opt-level = "z"
