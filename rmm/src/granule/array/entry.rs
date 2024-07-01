@@ -4,6 +4,8 @@ use crate::rmi::error::Error;
 use super::{GranuleState, GRANULE_SIZE};
 use spinning_top::{Spinlock, SpinlockGuard};
 use vmsa::guard::Content;
+use core::ops::{Deref, DerefMut};
+use alloc::rc::Rc;
 
 #[cfg(not(kani))]
 use crate::granule::{FVP_DRAM0_REGION, FVP_DRAM1_IDX, FVP_DRAM1_REGION};
@@ -88,7 +90,7 @@ impl Granule {
         self.state = state;
         Ok(())
     }
-
+/*
     pub fn content_mut<T: Content>(&mut self) -> &mut T {
         let addr = self.index_to_addr();
         unsafe { &mut *(addr as *mut T) }
@@ -98,7 +100,7 @@ impl Granule {
         let addr = self.index_to_addr();
         unsafe { &*(addr as *const T) }
     }
-
+*/
     fn index(&self) -> usize {
         let entry_size = core::mem::size_of::<Entry>();
         let granule_size = core::mem::size_of::<Granule>();
@@ -108,8 +110,9 @@ impl Granule {
         let granule_offset = entry_size - granule_size;
         let granule_addr = self as *const Granule as usize;
         let entry_addr = granule_addr - granule_offset;
-        let gst = &GRANULE_STATUS_TABLE;
-        let table_base = gst.entries.as_ptr() as usize;
+        let gst = unsafe { &GRANULE_STATUS_TABLE };
+        //let table_base = gst.entries.as_ptr() as usize;
+        let table_base = gst.as_ref().unwrap().entries.as_ptr() as usize;
         (entry_addr - table_base) / core::mem::size_of::<Entry>()
     }
 
@@ -153,11 +156,47 @@ impl Granule {
     }
 }
 
-pub struct Entry(Spinlock<Granule>);
+pub struct EntryGuard<'a, E> {
+    /// inner type for Entry, which corresponds to Entry::Inner
+    inner: SpinlockGuard<'a, E>,
+    addr: usize,
+}
+
+impl<'a, E> EntryGuard<'a, E> {
+    pub fn new(inner: SpinlockGuard<'a, E>, addr: usize) -> Self {
+        Self { inner, addr }
+    }
+
+    pub fn content<T: Content>(&self) -> &T {
+        let addr = self.addr;
+        unsafe { &*(addr as *const T) }
+    }
+
+    pub fn content_mut<T: Content>(&mut self) -> &mut T {
+        let addr = self.addr;
+        unsafe { &mut *(addr as *mut T) }
+    }
+}
+
+impl<'a, E> Deref for EntryGuard<'a, E> {
+    type Target = E;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl<'a, E> DerefMut for EntryGuard<'a, E> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
+    }
+}
+
+pub struct Entry(Spinlock<Rc<Granule>>);
 impl Entry {
     #[cfg(not(kani))]
     pub fn new() -> Self {
-        Self(Spinlock::new(Granule::new()))
+        Self(Spinlock::new(Rc::new(Granule::new())))
     }
     #[cfg(kani)]
     // DIFF: assertion is added to reduce the proof burden
@@ -167,8 +206,11 @@ impl Entry {
         Self(Spinlock::new(granule))
     }
 
-    pub fn lock(&self) -> Result<SpinlockGuard<'_, Granule>, Error> {
+    //pub fn lock(&self) -> Result<SpinlockGuard<'_, Granule>, Error> {
+    pub fn lock(&self) -> Result<EntryGuard<'_, Rc<Granule>>, Error> {
         let granule = self.0.lock();
-        Ok(granule)
+        let addr = granule.index_to_addr();
+        //Ok(granule)
+        Ok(EntryGuard::new(granule, addr))
     }
 }

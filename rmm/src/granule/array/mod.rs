@@ -3,6 +3,7 @@ pub mod entry;
 use self::entry::Entry;
 use self::entry::Granule;
 use crate::rmi::error::Error;
+use alloc::rc::Rc;
 
 pub const GRANULE_SIZE: usize = 4096;
 pub const GRANULE_SHIFT: usize = 12;
@@ -108,12 +109,28 @@ impl GranuleState {
     }
 }
 
-pub fn set_granule(granule: &mut Granule, state: u8) -> Result<(), Error> {
-    granule.set_state(state)
+pub fn set_granule(granule: &mut Rc<Granule>, state: u8) -> Result<(), Error> {
+//    granule.set_state(state)
+    Rc::get_mut(granule).map_or_else(
+        || Err(Error::RmiErrorCount),
+        |g| {
+            g.set_state(state)
+        },
+    )?;
+    Ok(())
 }
 
-lazy_static! {
-    pub static ref GRANULE_STATUS_TABLE: GranuleStatusTable = GranuleStatusTable::new();
+//lazy_static! {
+//    pub static ref GRANULE_STATUS_TABLE: GranuleStatusTable = GranuleStatusTable::new();
+//}
+pub static mut GRANULE_STATUS_TABLE: Option<GranuleStatusTable> = None;
+
+pub fn create_granule_status_table() {
+    unsafe {
+        if GRANULE_STATUS_TABLE.is_none() {
+            GRANULE_STATUS_TABLE = Some(GranuleStatusTable::new());
+        }
+    }
 }
 
 #[cfg(not(kani))]
@@ -153,8 +170,9 @@ macro_rules! get_granule {
             if idx >= GRANULE_STATUS_TABLE_SIZE {
                 Err(Error::RmiErrorInput)
             } else {
-                let gst = &GRANULE_STATUS_TABLE;
-                match gst.entries[idx].lock() {
+                let gst = unsafe { &GRANULE_STATUS_TABLE };
+                //match gst.entries[idx].lock() {
+                match gst.as_ref().unwrap().entries[idx].lock() {
                     Ok(guard) => Ok(guard),
                     Err(e) => Err(e),
                 }
