@@ -4,6 +4,8 @@ use crate::rmi::error::Error;
 use super::{GranuleState, GRANULE_SIZE};
 use spinning_top::{Spinlock, SpinlockGuard};
 use vmsa::guard::Content;
+use core::ops::{Deref, DerefMut};
+use alloc::rc::Rc;
 
 #[cfg(not(kani))]
 use crate::granule::{FVP_DRAM0_REGION, FVP_DRAM1_IDX, FVP_DRAM1_REGION};
@@ -108,8 +110,9 @@ impl Granule {
         let granule_offset = entry_size - granule_size;
         let granule_addr = self as *const Granule as usize;
         let entry_addr = granule_addr - granule_offset;
-        let gst = &GRANULE_STATUS_TABLE;
-        let table_base = gst.entries.as_ptr() as usize;
+        let gst = unsafe { &GRANULE_STATUS_TABLE };
+        //let table_base = gst.entries.as_ptr() as usize;
+        let table_base = gst.as_ref().unwrap().entries.as_ptr() as usize;
         (entry_addr - table_base) / core::mem::size_of::<Entry>()
     }
 
@@ -153,11 +156,11 @@ impl Granule {
     }
 }
 
-pub struct Entry(Spinlock<Granule>);
+pub struct Entry(Rc<Spinlock<Granule>>);
 impl Entry {
     #[cfg(not(kani))]
     pub fn new() -> Self {
-        Self(Spinlock::new(Granule::new()))
+        Self(Rc::new(Spinlock::new(Granule::new())))
     }
     #[cfg(kani)]
     // DIFF: assertion is added to reduce the proof burden
@@ -168,7 +171,6 @@ impl Entry {
     }
 
     pub fn lock(&self) -> Result<SpinlockGuard<'_, Granule>, Error> {
-        let granule = self.0.lock();
-        Ok(granule)
+        Ok(self.0.lock())
     }
 }
