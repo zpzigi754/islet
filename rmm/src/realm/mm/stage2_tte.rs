@@ -90,7 +90,7 @@ define_bits!(
     SH[9 - 8],
     AP[7 - 6],
     INVALID_HIPAS[5 - 5],
-    MEMATTR[5 - 2],
+    MEMATTR[4 - 2],
     DESC_TYPE[1 - 0],
     PAGE_FLAGS[11 - 0]
 );
