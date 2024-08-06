@@ -79,6 +79,7 @@ impl RttPage {
 
 define_bits!(
     S2TTE,
+    INVALID_RIPAS[57 - 56],
     NS[55 - 55],
     XN[54 - 54],
     ADDR_L0_PAGE[47 - 39], // XXX: check this again
@@ -89,7 +90,6 @@ define_bits!(
     AF[10 - 10],
     SH[9 - 8],
     AP[7 - 6],
-    INVALID_RIPAS[6 - 5],
     INVALID_HIPAS[4 - 2],
     MEMATTR[5 - 2],
     DESC_TYPE[1 - 0],
