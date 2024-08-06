@@ -13,9 +13,8 @@ use vmsa::guard::Content;
 pub const INVALID_UNPROTECTED: u64 = 0x0;
 
 pub mod invalid_hipas {
-    pub const UNASSIGNED: u64 = 0b00;
-    pub const ASSIGNED: u64 = 0b01;
-    pub const DESTROYED: u64 = 0b10;
+    pub const UNASSIGNED: u64 = 0b0;
+    pub const ASSIGNED: u64 = 0b1;
 }
 
 pub mod invalid_ripas {
@@ -90,7 +89,7 @@ define_bits!(
     AF[10 - 10],
     SH[9 - 8],
     AP[7 - 6],
-    INVALID_HIPAS[4 - 2],
+    INVALID_HIPAS[5 - 5],
     MEMATTR[5 - 2],
     DESC_TYPE[1 - 0],
     PAGE_FLAGS[11 - 0]
@@ -182,7 +181,7 @@ impl S2TTE {
 
     pub fn is_destroyed(&self) -> bool {
         self.get_masked_value(S2TTE::DESC_TYPE) == desc_type::LX_INVALID
-            && self.get_masked_value(S2TTE::INVALID_HIPAS) == invalid_hipas::DESTROYED
+            && self.get_masked_value(S2TTE::INVALID_RIPAS) == invalid_ripas::DESTROYED
     }
 
     pub fn is_assigned(&self) -> bool {
