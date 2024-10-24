@@ -115,7 +115,7 @@ pub fn set_event_handler(mainloop: &mut Mainloop) {
         Ok(())
     });
 
-    #[cfg(not(kani))]
+    #[cfg(any(not(kani), feature = "mc_rmi_realm_destroy"))]
     listen!(mainloop, rmi::REALM_DESTROY, |arg, _ret, rmm| {
         // get the lock for Rd
         let mut rd_granule = get_granule_if!(arg[0], GranuleState::RD)?;
@@ -132,6 +132,8 @@ pub fn set_event_handler(mainloop: &mut Mainloop) {
         }
 
         let rtt_base = rd.rtt_base();
+        // TODO: fix me the below later
+        #[cfg(not(kani))]
         for i in 0..rd.rtt_num_start() {
             let rtt = rtt_base + i * GRANULE_SIZE;
             let mut rtt_granule = get_granule_if!(rtt, GranuleState::RTT)?;
