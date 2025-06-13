@@ -228,18 +228,34 @@ pub fn init_ripas(rd: &mut Rd, base: usize, top: usize) -> Result<usize, Error> 
     }
 }
 
-pub fn get_ripas(rd: &Rd, ipa: usize, level: usize) -> Result<u64, Error> {
-    let (s2tte, last_level) = S2TTE::get_s2tte(rd, ipa, level, Error::RmiErrorRtt(0))?;
-
-    if level != last_level {
-        return Err(Error::RmiErrorRtt(last_level));
+// return (out_top, ripas)
+pub fn get_ripas(
+    rd: &Rd,
+    start: usize,
+    end: usize,
+) -> Result<(usize, u64), Error> {
+    let level = RTT_PAGE_LEVEL;
+    let mut addr = start;
+    let mut common_ripas = 0; // initialized in the below if condition (addr == start)
+    let mut map_size = 0; // initialized in the below if condition (addr == start)
+    while addr < end {
+        let (s2tte, last_level) = S2TTE::get_s2tte(rd, addr, level, Error::RmiErrorRtt(0))?;
+        if !s2tte.has_ripas(level) {
+            break;
+        }
+        let ripas = s2tte.get_ripas();
+        if addr == start {
+            common_ripas = ripas;
+            map_size = mapping_size(last_level);
+        } else if common_ripas != ripas {
+            break;
+        }
+        addr += map_size;
     }
-
-    if s2tte.is_assigned_ram(level) {
-        return Ok(invalid_ripas::RAM);
+    if addr == start {
+        return Err(Error::RmiErrorInput);
     }
-
-    Ok(s2tte.get_ripas())
+    Ok((addr, common_ripas))
 }
 
 pub fn read_entry(rd: &Rd, ipa: usize, level: usize) -> Result<[usize; 4], Error> {
